@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="Libvirt Java Bindings" default="build" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 	<property file="build.properties" />
-	<property name="jar" value="libvirt-${version}" />
+	<property name="jar" value="libvirt-asergo-${version}" />
 	<property name="jar.file" value="target/${jar}.jar" />
 	<property name="jar.docfile" value="target/${jar}-javadoc.jar" />
 	<property name="jar.srcfile" value="target/${jar}-sources.jar" />

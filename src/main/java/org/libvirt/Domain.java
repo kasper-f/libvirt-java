@@ -4,19 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 import org.libvirt.event.IOErrorListener;
-import org.libvirt.jna.CString;
-import org.libvirt.jna.DomainPointer;
-import org.libvirt.jna.DomainSnapshotPointer;
-import org.libvirt.jna.Libvirt;
-import org.libvirt.jna.SizeT;
-import org.libvirt.jna.virDomainBlockInfo;
-import org.libvirt.jna.virDomainBlockStats;
-import org.libvirt.jna.virDomainInfo;
-import org.libvirt.jna.virDomainInterfaceStats;
-import org.libvirt.jna.virDomainJobInfo;
-import org.libvirt.jna.virDomainMemoryStats;
-import org.libvirt.jna.virSchedParameter;
-import org.libvirt.jna.virVcpuInfo;
+import org.libvirt.jna.*;
 import org.libvirt.event.RebootListener;
 import org.libvirt.event.LifecycleListener;
 import org.libvirt.event.PMWakeupListener;
@@ -27,7 +15,6 @@ import static org.libvirt.ErrorHandler.processErrorIfZero;
 
 import com.sun.jna.Native;
 import com.sun.jna.NativeLong;
-import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
 
 import java.util.Arrays;
@@ -44,56 +31,66 @@ public class Domain {
         public static final int BYTES = 1;
     }
 
-    static final class CreateFlags {
-        static final int VIR_DOMAIN_NONE = 0;
-        static final int VIR_DOMAIN_SNAPSHOT_CREATE_REDEFINE    = (1 << 0); /* Restore or alter
-                                                                               metadata */
-        static final int VIR_DOMAIN_SNAPSHOT_CREATE_CURRENT     = (1 << 1); /* With redefine, make
-                                                                               snapshot current */
-        static final int VIR_DOMAIN_SNAPSHOT_CREATE_NO_METADATA = (1 << 2); /* Make snapshot without
-                                                                               remembering it */
-        static final int VIR_DOMAIN_SNAPSHOT_CREATE_HALT        = (1 << 3); /* Stop running guest
-                                                                               after snapshot */
-        static final int VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY   = (1 << 4); /* disk snapshot, not
-                                                                               system checkpoint */
-        static final int VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT   = (1 << 5); /* reuse any existing
-                                                                               external files */
-        static final int VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE     = (1 << 6); /* use guest agent to
-                                                                               quiesce all mounted
-                                                                               file systems within
-                                                                               the domain */
-        static final int VIR_DOMAIN_SNAPSHOT_CREATE_ATOMIC      = (1 << 7); /* atomically avoid
-                                                                               partial changes */
+    public static final class CreateFlags {
+        public static final int VIR_DOMAIN_NONE = 0;
+        /** Restore or alter metadata */
+        public static final int VIR_DOMAIN_SNAPSHOT_CREATE_REDEFINE    = (1 << 0);
+        /** With redefine, make snapshot current */
+        public static final int VIR_DOMAIN_SNAPSHOT_CREATE_CURRENT     = (1 << 1);
+        /** Make snapshot without remembering it */
+        public static final int VIR_DOMAIN_SNAPSHOT_CREATE_NO_METADATA = (1 << 2);
+        /** Stop running guest after snapshot */
+        public static final int VIR_DOMAIN_SNAPSHOT_CREATE_HALT        = (1 << 3);
+        /** disk snapshot, not system checkpoint */
+        public static final int VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY   = (1 << 4);
+        /** reuse any existing external files */
+        public static final int VIR_DOMAIN_SNAPSHOT_CREATE_REUSE_EXT   = (1 << 5);
+        /** use guest agent to quiesce all mounted file systems within the domain */
+        public static final int VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE     = (1 << 6);
+        /** atomically avoid partial changes */
+        public static final int VIR_DOMAIN_SNAPSHOT_CREATE_ATOMIC      = (1 << 7);
     }
 
-    static final class MigrateFlags {
-        static final int VIR_MIGRATE_LIVE              = (1 << 0); /* live migration */
-        static final int VIR_MIGRATE_PEER2PEER         = (1 << 1); /* direct source -> dest host control channel */
+    public static final class MigrateFlags {
+        /** live migration */
+        public static final int VIR_MIGRATE_LIVE              = (1 << 0);
+        /** direct source -> dest host control channel */
+        public static final int VIR_MIGRATE_PEER2PEER         = (1 << 1);
         /* Note the less-common spelling that we're stuck with:
            VIR_MIGRATE_TUNNELLED should be VIR_MIGRATE_TUNNELED */
-        static final int VIR_MIGRATE_TUNNELLED         = (1 << 2); /* tunnel migration data over libvirtd connection */
-        static final int VIR_MIGRATE_PERSIST_DEST      = (1 << 3); /* persist the VM on the destination */
-        static final int VIR_MIGRATE_UNDEFINE_SOURCE   = (1 << 4); /* undefine the VM on the source */
-        static final int VIR_MIGRATE_PAUSED            = (1 << 5); /* pause on remote side */
-        static final int VIR_MIGRATE_NON_SHARED_DISK   = (1 << 6); /* migration with non-shared storage with full disk copy */
-        static final int VIR_MIGRATE_NON_SHARED_INC    = (1 << 7); /* migration with non-shared storage with incremental copy */
-                                                                   /* (same base image shared between source and destination) */
-        static final int VIR_MIGRATE_CHANGE_PROTECTION = (1 << 8); /* protect for changing domain configuration through the
-                                                                    * whole migration process; this will be used automatically
-                                                                    * when supported */
-        static final int VIR_MIGRATE_UNSAFE            = (1 << 9); /* force migration even if it is considered unsafe */
+        /** tunnel migration data over libvirtd connection */
+        public static final int VIR_MIGRATE_TUNNELLED         = (1 << 2);
+        /** persist the VM on the destination */
+        public static final int VIR_MIGRATE_PERSIST_DEST      = (1 << 3);
+        /** undefine the VM on the source */
+        public static final int VIR_MIGRATE_UNDEFINE_SOURCE   = (1 << 4);
+        /** pause on remote side */
+        public static final int VIR_MIGRATE_PAUSED            = (1 << 5);
+        /** migration with non-shared storage with full disk copy */
+        public static final int VIR_MIGRATE_NON_SHARED_DISK   = (1 << 6);
+        /** migration with non-shared storage with incremental copy
+         * (same base image shared between source and destination)
+         */
+        public static final int VIR_MIGRATE_NON_SHARED_INC    = (1 << 7);
+        /** protect for changing domain configuration through the
+         * whole migration process; this will be used automatically
+         * when supported */
+        public static final int VIR_MIGRATE_CHANGE_PROTECTION = (1 << 8);
+        /** force migration even if it is considered unsafe */
+        public static final int VIR_MIGRATE_UNSAFE            = (1 << 9);
     }
 
-    static final class XMLFlags {
+    public static final class XMLFlags {
         /**
          * dump security sensitive information too
          */
-        static final int VIR_DOMAIN_XML_SECURE = 1;
+        public static final int VIR_DOMAIN_XML_SECURE = 1;
         /**
          * dump inactive domain information
          */
-        static final int VIR_DOMAIN_XML_INACTIVE = 2;
-        static final int VIR_DOMAIN_XML_UPDATE_CPU   = (1 << 2); /* update guest CPU requirements according to host CPU */
+        public static final int VIR_DOMAIN_XML_INACTIVE = 2;
+        /** update guest CPU requirements according to host CPU */
+        public static final int VIR_DOMAIN_XML_UPDATE_CPU   = (1 << 2);
     }
 
     public static final class UndefineFlags {
@@ -139,6 +136,45 @@ public class Domain {
          * Filter by snapshots with no metadata
          */
         public static final int NO_METADATA = (1 << 4);
+    }
+
+    public static final class virDomainBlockCopyFlags {
+        /**
+         * Limit copy to top of source backing chain
+         */
+        public static final int  VIR_DOMAIN_BLOCK_COPY_SHALLOW	=	1;
+        /**
+         * Reuse existing external file for a copy
+         */
+        public static final int  VIR_DOMAIN_BLOCK_COPY_REUSE_EXT	=	2;
+    }
+
+    public static final class DomainBlockJobAbortFlags {
+        public static final int  VIR_DOMAIN_BLOCK_JOB_ABORT_ASYNC	=	1;
+        public static final int  VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT	=	2;
+    }
+    
+    public static final class DomainBlockCommitFlags {
+        /**
+         * NULL base means next backing file, not whole chain
+         */
+        public static final int  VIR_DOMAIN_BLOCK_COMMIT_SHALLOW	=	1;
+        /**
+         * Delete any files that are now invalid after their contents have been committed
+         */
+        public static final int VIR_DOMAIN_BLOCK_COMMIT_DELETE	=	2;
+        /**
+         * Allow a two-phase commit when top is the active layer
+         */
+        public static final int  VIR_DOMAIN_BLOCK_COMMIT_ACTIVE	=	4;
+        /**
+         * keep the backing chain referenced using relative names
+         */
+        public static final int VIR_DOMAIN_BLOCK_COMMIT_RELATIVE	=	8;
+        /**
+         * bandwidth in bytes/s instead of MiB/s
+         */
+        public static final int VIR_DOMAIN_BLOCK_COMMIT_BANDWIDTH_BYTES	=	16;
     }
 
     /**
@@ -285,6 +321,65 @@ public class Domain {
         virDomainBlockInfo info = new virDomainBlockInfo();
         processError(libvirt.virDomainGetBlockInfo(VDP, path, info, 0));
         return new DomainBlockInfo(info);
+    }
+
+    /**
+     * This function preform a block commit http://www.libvirt.org/html/libvirt-libvirt-domain.html#virDomainBlockCommit
+     *
+     *
+     * @param disk path to the block device, or device shorthand
+     * @param base path to backing file to merge into, or device shorthand, or NULL for default
+     * @param top  path to file within backing chain that contains data to be merged, or device shorthand, or NULL to merge all possible data
+     * @param bandwith (optional) specify bandwidth limit; flags determine the unit
+     * @param flags from http://www.libvirt.org/html/libvirt-libvirt-domain.html#virDomainBlockCommitFlags
+     *
+     * @return the success status
+     * @throws LibvirtException
+     */
+    public boolean blockCommit(String disk,String base, String top,long bandwith, int flags) throws LibvirtException {
+//        virDomainBlockCommit info = new virDomainBlockCommit();
+        return processError(libvirt.virDomainBlockCommit(VDP, disk, base,top,bandwith, flags)) == 0;
+    }
+
+/**
+     * This function get block job info or null, see http://www.libvirt.org/html/libvirt-libvirt-domain.html#virDomainGetBlockJobInfo
+     *
+     * @param disk
+     *            the path to the block device
+     * @return blockJobInfo or null if no block job
+     * @throws LibvirtException
+     */
+    public BlockJobInfo blockJobInfo(String disk) throws LibvirtException {
+        virDomainBlockJobInfo info = new virDomainBlockJobInfo();
+        int res= processError(libvirt.virDomainGetBlockJobInfo(VDP, disk, info, 0));
+        return res == 1? new BlockJobInfo(info.type, info.bandwith, info.cur, info.end): null;
+    }
+
+    /**
+     * This function preform a block job abort http://www.libvirt.org/html/libvirt-libvirt-domain.html#virDomainBlockJobAbort
+     *
+     *
+     * @param disk
+     *            the path to the block device
+     * @return the success status
+     * @throws LibvirtException
+     */
+    public boolean blockJobAbort(String disk, int flags) throws LibvirtException {
+        return processError(libvirt.virDomainBlockJobAbort(VDP, disk, flags)) == 0;
+    }
+  /**
+     * This function preform a block Copy http://www.libvirt.org/html/libvirt-libvirt-domain.html#virDomainBlockCopy
+     *
+     *
+     * @param disk
+     *            the path to the block device
+     * @param xmlDesc XML description of the copy destination
+     * @param flags bitwise-OR of virDomainBlockCopyFlags
+     * @return the success status
+     * @throws LibvirtException
+     */
+    public boolean blockCopy(String disk, String xmlDesc, int flags) throws LibvirtException {
+        return processError(libvirt.virDomainBlockCopy(VDP, disk, xmlDesc, null,0, flags)) == 0;
     }
 
     /**

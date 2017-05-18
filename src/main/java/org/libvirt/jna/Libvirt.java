@@ -277,6 +277,11 @@ public interface Libvirt extends Library {
                            ByteBuffer buffer, int flags);
     int virDomainBlockStats(DomainPointer virDomainPtr, String path, virDomainBlockStats stats, SizeT size);
     int virDomainBlockResize(DomainPointer virDomainPtr, String disk, long size, int flags);
+
+    int virDomainBlockCopy(DomainPointer virDomainPtr, String disk, String xmlDesc,  ParameterPointer params,int nparams, int flags);
+    int virDomainBlockCommit(DomainPointer virDomainPtr, String disk, String base, String top, long bandwith, int flags);
+    int virDomainGetBlockJobInfo(DomainPointer virDomainPtr, String disk, virDomainBlockJobInfo info, int flags);
+    int virDomainBlockJobAbort(DomainPointer virDomainPtr, String disk, int flags);
     int virDomainCoreDump(DomainPointer virDomainPtr, String to, int flags);
     int virDomainCreate(DomainPointer virDomainPtr);
     int virDomainCreateWithFlags(DomainPointer virDomainPtr, int flags);
